@@ -1,0 +1,465 @@
+/* Modified by Magstic, based on original work by Topik (GPLv3) */
+
+.song-info__artist { order: 1; margin-top: 4px; }
+
+@font-face {
+	font-family: 'YouTube Sans';
+	src: url('../assets/YouTube-Sans-Light.woff2') format('woff2'),
+	url('../assets/YouTube-Sans-Light.woff') format('woff');
+	font-weight: 300;
+	font-style: normal;
+}
+
+@font-face {
+	font-family: 'YouTube Sans';
+	src: url('../assets/YouTube-Sans-Medium.woff2') format('woff2'),
+	url('../assets/YouTube-Sans-Medium.woff') format('woff');
+	font-weight: 500;
+	font-style: normal;
+}
+
+@media screen and (max-height: 100px) {
+	.song-info__time,
+	.song-info__album-art {
+		display: none;
+	}
+
+	body .song-info__text_info {
+		width: 100%;
+		margin: 0 0 0 1em;
+	}
+
+	body {
+		font-size: 2vmax;
+	}
+
+	body .song-info__text_info .song-info__artist-name {
+		font-size: 2em;
+	}
+
+	body .song-info__text_info .song-info__artist,
+	body .song-info__text_info .song-info__artist-name {
+		display: inline;
+	}
+
+	body .song-info__text_info .song-info__title {
+		font-size: 2em;
+		display: inline;
+	}
+
+	body .song-info__text_info .song-info__title:before {
+		content: " - ";
+	}
+}
+
+html, body {
+	margin: 0;
+	padding: 0;
+	height: 100%;
+	overflow: hidden;
+	font-size: 4vw;
+	background-color: transparent;
+}
+
+body {
+	color: white;
+	font-weight: 300;
+	font-family: 'YouTube Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+main {
+	width: 100%;
+	height: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+/* 全局佈局與玻璃卡片相關變數 */
+:root {
+  --gap: 12px;
+  --radius: 16px;
+  --card-radius: 24px;
+  --card-blur: 4px;
+  --widget-scale: 2;
+  --progress-height: 8px;
+  --marquee-duration: 10s;
+  --timeline-area-height: 40px;
+  --time-col-width: 8ch;
+  --card-width: 500px;
+}
+
+.online {
+	transform: scale(var(--widget-scale));
+	transform-origin: center center;
+	width: var(--card-width);
+}
+
+.song-info {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "album info"
+    "progress progress";
+  grid-column-gap: var(--gap);
+  grid-row-gap: var(--gap);
+  align-items: stretch;
+  width: 100%;
+  height: 100%;
+  padding: var(--gap);
+  box-sizing: border-box;
+}
+
+.song-info__album-art {
+  grid-area: album;
+  float: none;
+  margin: 0;
+  width: auto;
+  height: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: 0 6px 20px rgba(0,0,0,.25);
+  position: relative;
+}
+
+.song-info__album-art .song-info__album-art-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  transition: opacity 1200ms ease-out;
+  z-index: 0;
+}
+
+.song-info__album-art .song-info__album-art-image.is-visible {
+  opacity: 1;
+}
+
+.song-info__album-art::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    linear-gradient(145deg, rgba(255,255,255,0.20) 0%, rgba(255,255,255,0.10) 35%, rgba(255,255,255,0.02) 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.10),
+    0 8px 18px rgba(0,0,0,0.20);
+  z-index: 1;
+}
+
+.song-info__text_info {
+  grid-area: info;
+  float: none;
+  width: auto;
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  background: rgba(255,255,255,0.12);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 6px 20px rgba(0,0,0,.18);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+.song-info__artist-name { font-weight: 400; font-size: 18px; opacity: .95; }
+
+.song-info__title {
+  margin-top: 6px;
+  font-weight: 700;
+  font-size: 26px;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  position: relative;
+  mask-image: none !important;
+  -webkit-mask-image: none !important;
+  order: 0;
+}
+
+.song-info__title .song-info__title-inner {
+  display: inline-block;
+  transform: translateX(0);
+  will-change: transform;
+  animation: marquee-pingpong var(--marquee-duration) linear infinite;
+  animation-play-state: paused; /* 只有文字溢出時才啟動 */
+}
+
+.song-info__title.is-scrolling .song-info__title-inner { animation-play-state: running; }
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(calc(-1 * var(--marquee-distance, 100%))); }
+}
+
+@keyframes marquee-pingpong {
+  0% { transform: translateX(0); }
+  20% { transform: translateX(0); }
+  50% { transform: translateX(calc(-1 * var(--marquee-distance, 100%))); }
+  70% { transform: translateX(calc(-1 * var(--marquee-distance, 100%))); }
+  100% { transform: translateX(0); }
+}
+
+.song-info__time {
+  grid-area: progress;
+  position: static;
+  width: 100%;
+}
+
+.song-info progress.progressbar {
+  position: static;
+  width: 100%;
+}
+
+/* 專輯圖跟隨外層圓角 */
+.song-info__album-art .song-info__album-art-image {
+  border-radius: inherit;
+}
+
+/* 確保插件畫布也按圓角裁切 */
+.song-info__album-art,
+.song-info__album-art .song-info__album-art-image,
+.song-info__album-art canvas {
+  border-radius: var(--radius) !important;
+  overflow: hidden;
+}
+
+/* 玻璃卡片最終樣式 */
+.song-info {
+  background-color: rgba(24,24,24,0.78);
+	border-radius: var(--card-radius);
+	padding: 16px;
+	width: 100%;
+	max-width: 500px;
+	height: auto;
+	grid-template-columns: 140px 1fr; /* 左：封面，右：文字 */
+	grid-template-rows: auto minmax(0, 1fr);
+	border: 1px solid rgba(255,255,255,0.04);
+	overflow: hidden; /* 避免內容向右溢出 */
+	box-sizing: border-box; /* 將內邊距計入尺寸 */
+	position: relative;
+	background-size: cover;
+	background-position: center;
+	background-repeat: no-repeat;
+	background-blend-mode: overlay;
+}
+
+.song-info::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: inherit;
+	filter: blur(var(--card-blur));
+	border-radius: inherit;
+	z-index: 0;
+	transition: filter 1600ms ease-out;
+}
+
+.song-info::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.407);
+	border-radius: inherit;
+	z-index: 1;
+}
+
+.song-info > * {
+	position: relative;
+	z-index: 2;
+}
+
+.song-info__album-art {
+  width: 140px;
+  height: 140px;
+  box-shadow: none;
+  grid-column: 1;
+	grid-row: 1 / span 2; /* 封面占兩行，右側同時容納資訊與時間 */
+}
+.song-info__album-art .song-info__album-art-image { border-radius: inherit; }
+
+.song-info__text_info {
+  background: transparent !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  box-shadow: none;
+	padding: 0 8px; /* 預留左右空隙避免被圓角裁掉文字 */
+  height: auto;
+  grid-column: 2;
+  grid-row: 1;
+	overflow: hidden; /* 限制內容在卡片內 */
+	min-width: 0; /* 允許在網格中正常收縮 */
+  max-width: 100%;
+}
+
+/* 文字樣式設定 */
+.song-info__title {
+  font-size: 24px !important;
+  font-weight: 700;
+  margin: 0;
+  display: block;
+  max-width: 100%;
+}
+.song-info__artist-name {
+  font-size: 18px !important;
+  color: #b3b3b3;
+  margin: 4px 0 0;
+  font-weight: 400;
+  opacity: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  position: relative;
+  mask-image: none !important;
+  -webkit-mask-image: none !important;
+  display: block;
+  max-width: 100%;
+}
+
+/* Timeline row: 時間顯示區 */
+.song-info__time {
+  grid-column: 2;
+  grid-row: 2;
+  position: static;
+  width: 100%;
+	min-width: 0; /* 防止在網格中橫向溢出 */
+  min-height: var(--timeline-area-height);
+  margin-top: 0;
+	overflow: hidden; /* 限制時間與進度在自身區域內 */
+	box-sizing: border-box;
+	display: grid;
+	grid-template-rows: var(--timeline-area-height) auto; /* 上方固定時間區，下方為進度條 */
+  align-items: center;
+}
+.song-info__time .song-info__time-container {
+  display: grid;
+  grid-template-columns: var(--time-col-width) minmax(0, 1fr) var(--time-col-width);
+  column-gap: 8px;
+  align-items: center;
+  color: #e3e3e3;
+  font-size: 18px;
+  font-weight:bold;
+  padding: 0;
+  position: relative;
+  box-sizing: border-box;
+  overflow: hidden;
+  margin: 0;
+	min-width: 0; /* 允許整個容器隨卡片縮放 */
+  width: 100%;
+  grid-row: 1;
+	align-self: center; /* 在時間區塊內垂直置中 */
+}
+.song-info__time .song-info__time-left { grid-column: 1; }
+.song-info__time .song-info__time-waveform { grid-column: 2; min-width: 0; }
+.song-info__time .song-info__time-right { grid-column: 3; text-align: right; }
+.song-info__time .song-info__time-separator { display: none; }
+.song-info__time .song-info__time-left,
+.song-info__time .song-info__time-right {
+  flex: 0 0 auto;
+  min-width: 0;
+  line-height: 24px;
+  width: var(--time-col-width);
+	font-variant-numeric: tabular-nums; /* 若瀏覽器支援則使用等寬數字 */
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
+}
+.song-info__time .song-info__time-left { text-align: left; }
+.song-info__time .song-info__time-right { text-align: right; }
+
+.song-info__time .song-info__time-waveform {
+  flex: 1 1 0%;
+  height: 24px;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  align-items: center;
+  gap: 4px;
+  opacity: 0.8;
+  background: none;
+  border-radius: 2px;
+  overflow: hidden;
+	min-width: 0; /* 中間區域優先縮放，避免擠壓左右時間 */
+}
+.song-info__time-waveform .bar {
+  width: 100%;
+  height: 60%;
+  background: #ffffff;
+  border-radius: 2px;
+  transform-origin: 50% 50%;
+  transform: scaleY(var(--min, .6));
+  animation: wfPulse var(--dur, 1600ms) ease-in-out infinite;
+  animation-delay: var(--delay, 0ms);
+  animation-play-state: paused;
+}
+body:not(.paused) .song-info__time-waveform .bar { animation-play-state: running; }
+
+/* 若有外部真實波形數據，改用 --external-level 控制高度，關閉偽動畫 */
+body.has-external-waveform .song-info__time-waveform .bar {
+	animation: none !important;
+	animation-play-state: paused !important;
+	transform: scaleY(var(--external-level, .6));
+	transition: transform 80ms linear;
+}
+
+@keyframes wfPulse {
+  0% { transform: scaleY(var(--min, .6)); }
+  50% { transform: scaleY(var(--max, .95)); }
+  100% { transform: scaleY(var(--min, .6)); }
+}
+
+/* 為每根 bar 設定略有差異的節奏參數 */
+.song-info__time-waveform .bar:nth-child(1) { --dur: 1100ms; --delay: 0ms;   --min:.45; --max:.85; }
+.song-info__time-waveform .bar:nth-child(2) { --dur: 1250ms; --delay: 50ms;  --min:.35; --max:.95; }
+.song-info__time-waveform .bar:nth-child(3) { --dur: 1000ms; --delay: 120ms; --min:.40; --max:.80; }
+.song-info__time-waveform .bar:nth-child(4) { --dur: 1400ms; --delay: 80ms;  --min:.50; --max:.90; }
+.song-info__time-waveform .bar:nth-child(5) { --dur: 1150ms; --delay: 160ms; --min:.30; --max:.75; }
+.song-info__time-waveform .bar:nth-child(6) { --dur: 1200ms; --delay: 40ms;  --min:.35; --max:.88; }
+.song-info__time-waveform .bar:nth-child(7) { --dur: 1050ms; --delay: 100ms; --min:.42; --max:.92; }
+.song-info__time-waveform .bar:nth-child(8) { --dur: 1350ms; --delay: 140ms; --min:.38; --max:.83; }
+.song-info__time-waveform .bar:nth-child(9) { --dur: 950ms;  --delay: 70ms;  --min:.34; --max:.78; }
+.song-info__time-waveform .bar:nth-child(10){ --dur: 1300ms; --delay: 200ms; --min:.48; --max:.90; }
+.song-info__time-waveform .bar:nth-child(11){ --dur: 1150ms; --delay: 220ms; --min:.32; --max:.82; }
+.song-info__time-waveform .bar:nth-child(12){ --dur: 1250ms; --delay: 260ms; --min:.37; --max:.88; }
+
+/* 進度條樣式 */
+.song-info progress.progressbar {
+  position: static;
+  width: 100%;
+  height: var(--progress-height) !important;
+  border-radius: 2px !important;
+  background: #404040 !important;
+  overflow: hidden;
+  max-width: 100%;
+  box-sizing: border-box;
+  display: block;
+  grid-row: 2;
+  align-self: end;
+  margin-bottom: 4px;
+}
+.song-info progress.progressbar::-webkit-progress-bar { background: #000000 !important; border-radius: 2px !important; }
+.song-info progress.progressbar::-webkit-progress-value { background: #e2e2e2 !important; border-radius: 2px !important; }
+.song-info progress.progressbar::-moz-progress-bar { background: #e2e2e2 !important; border-radius: 2px !important; }
+
+/* 演唱者名稱限制 60% 寬度並以蒙版漸隱溢出 */
+.song-info__artist-name {
+  width: 60% !important;
+  max-width: 60% !important;
+  white-space: nowrap;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,1) 0, rgba(0,0,0,1) calc(100% - 24px), rgba(0,0,0,0) 100%) !important;
+  mask-image: linear-gradient(to right, rgba(0,0,0,1) 0, rgba(0,0,0,1) calc(100% - 24px), rgba(0,0,0,0) 100%) !important;
+}
+.song-info__artist-name .song-info__artist-name-inner {
+  padding-right: 0 !important;
+  animation: none !important;
+  transform: none !important;
+}
+.song-info__artist-name.is-scrolling .song-info__artist-name-inner { animation: none !important; }
