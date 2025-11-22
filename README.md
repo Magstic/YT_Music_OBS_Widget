@@ -1,6 +1,8 @@
 # YT Music OBS Widget
 
-適用於 YouTube Music Desktop 的 OBS Studio Widget。
+適用於 [YouTube Music Desktop](https://github.com/ytmdesktop/ytmdesktop) 的 OBS Studio Widget。
+
+<img width="677" height="252" alt="image" src="https://github.com/user-attachments/assets/cf51f56d-aca8-498e-9f67-ddbd17436679" />
 
 ## 功能
 
